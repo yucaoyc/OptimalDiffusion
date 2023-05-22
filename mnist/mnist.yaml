@@ -1,0 +1,29 @@
+dataset : 'mnist'
+dataroot : 'datasets'
+weight : 'default'
+saveroot : 'saved'
+print_every : 1000
+sample_every : 500 # output something every sample_very steps.
+checkpoint_every : 1000
+num_steps : 1000 # number of integration steps for sampling
+num_workers : 8
+seed : 2
+num_method : 'em'
+
+# optimization
+vtype : 'rademacher'
+batch_size : 64
+test_batch_size : 256
+lr : 0.0001
+num_iterations : 10000
+
+# # model
+real : True # transforming the data from [0,1] to the real space using the logit function
+debias : False # using non-uniform sampling to debias the denoising score matching loss
+T0 : 1.4 # integration time
+
+reduce_percent : 1.0 # 1.0 means no reduction.
+logit_alpha : 0.05 # alpha value in logit transform. Huang, et al. uses 0.05
+
+input_channels : 1
+input_height : 28
