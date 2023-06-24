@@ -13,6 +13,19 @@ def add_noise(density: np.ndarray, eps: float=1e-7):
 
     return density
 
+def evaluate_1d(true_data: np.ndarray, fake_data: np.ndarray, x0: float, x1: float):
+
+    bins = np.linspace(start=x0, stop=x1, num=100)
+
+    true_density, _ = np.histogram(a=true_data, bins=bins, range=(x0, x1), density=True)
+    fake_density, _ = np.histogram(a=fake_data, bins=bins, range=(x0, x1), density=True)
+
+    js = jensenshannon(p=true_density, q=fake_density)
+    kl = kl_div(add_noise(true_density, eps=1e-7), add_noise(fake_density, eps=1e-7)).mean()
+    wd = wasserstein_distance(u_values=true_density, v_values=fake_density)
+
+    return js, kl, wd
+
 def evaluate_2d(true_data: np.ndarray, fake_data: np.ndarray, x0: float, x1: float, y0: float, y1: float):
 
     xbins = np.linspace(start=x0, stop=x1, num=101)

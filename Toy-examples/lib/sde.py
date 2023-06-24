@@ -214,7 +214,7 @@ class SDE(nn.Module):
         return x_t
 
 
-    def sample(self, x_t: torch.Tensor, T: float=0, N: int=100, to_numpy: bool=False, sf_alpha: float=4.0, exact_score=None, exact_score_noise_level: float=0.2):
+    def sample(self, x_t: torch.Tensor, T: float=0, N: int=100, to_numpy: bool=False, sf_alpha: float=4.0, exact_score_fn=None, corrupter=None, eps=1e-2):
 
         self.eval()
 
@@ -226,12 +226,22 @@ class SDE(nn.Module):
 
                 for t in np.arange(self.T, T, dt):
 
-                    t = np.ones(x_t.size(0), dtype=np.int64) * t
+                    if exact_score_fn is None:
 
-                    t_emb = self.time_embedding(t=t)
+                        t = np.ones(x_t.size(0), dtype=np.int64) * t
 
-                    score_input = torch.cat([x_t, t_emb], dim=1)
-                    score = self.score_net(score_input) / torch.sqrt(1 - torch.exp(-self.Int_beta(t))).view(-1, 1)
+                        t_emb = self.time_embedding(t=t)
+
+                        score_input = torch.cat([x_t, t_emb], dim=1)
+                        score = self.score_net(score_input) / torch.sqrt(1 - torch.exp(-self.Int_beta(t))).view(-1, 1)
+
+                    else:
+
+                        Bt = self.np_Int_beta(t)
+                        score = exact_score_fn(x=x_t.numpy(), Bt=Bt)
+
+                        if corrupter is not None:
+                            score = corrupter.err_fun(score, t, eps=eps)
 
                     x_t = self.reverse_sde(x_t, t, dt=dt, score=score, sf_alpha=sf_alpha)
 

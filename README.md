@@ -4,6 +4,7 @@ This code repository aims to explore how the diffusion coefficient affects the s
 
 ## How to run codes:
 - 1D Gaussian: one may simply run the jupyter notebook therein.
+- Swissroll and Gaussian mixtures: one may simply run the jupyter notebook therein.
 - mnist:
 ```
 cd mnist # move to the folder
