@@ -109,6 +109,8 @@ for i in range(len(weight_type_list)):
                 torch.manual_seed(seed)
 
                 gen_sde, logit, args = load_model(weight_type, seed, iter_num, num_method)
+                # turn on evaluation mode
+                gen_sde.eval()
 
                 _, gen_img, _ = plot_grids(gen_sde, c, logit, args, num_method=num_method, \
                                             num_steps=num_steps, n=n, binary=True)

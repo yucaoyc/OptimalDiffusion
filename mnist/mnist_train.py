@@ -110,6 +110,9 @@ def run_simu(weight_type, seed, num_iterations, num_method="ei"):
         writer.add_scalar('T', gen_sde.T.item(), count)
 
     while not_finished:
+        # turn on the training mode
+        gen_sde.train()
+
         for x, _ in trainloader:
             if torch.cuda.is_available():
                 x = x.cuda()
@@ -137,10 +140,10 @@ def run_simu(weight_type, seed, num_iterations, num_method="ei"):
                 print_('Finished training')
                 break
 
-            if count % args['sample_every'] == 0:
-                gen_sde.eval()
+#            if count % args['sample_every'] == 0:
+#                gen_sde.eval()
                 # do something...
-                gen_sde.train()
+#                gen_sde.train()
 
             if count % args['checkpoint_every'] == 0:
                 torch.save([gen_sde, optim, not_finished, count, loss_vec], \
@@ -156,6 +159,8 @@ def run_simu(weight_type, seed, num_iterations, num_method="ei"):
     plt.savefig(folder_path + "/loss_{:s}.eps".format(particular_str))
     plt.savefig(folder_path + "/loss_{:s}.pdf".format(particular_str))
 
+    # turn off the training mode
+    gen_sde.eval()
 
     ###############################################################################
     # plot 10 * 10 figures
