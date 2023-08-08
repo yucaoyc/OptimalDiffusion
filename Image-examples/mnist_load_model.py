@@ -4,6 +4,7 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 import sys
+sys.path.append('./')
 from lib.sdes import VariancePreservingSDE, PluginReverseSDE
 from lib.plotting import get_grid, plot_grids
 from lib.flows.elemwise import LogitTransform
@@ -19,12 +20,18 @@ import datetime
 
 retrain_model = False
 
-def run_simu(weight_type, seed, num_iterations, num_method="ei"):
+def load_model(weight_type, seed, num_iterations, num_method="ei", to_plot=False, device=None):
+
+    if device == None:
+        # use default configuration
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
     torch.cuda.empty_cache()
 
     with open('mnist.yaml', 'r') as file:
         args = yaml.safe_load(file)
-    particular_str = "{:s}-{:s}-{:d}-{:d}".format(args['dataset'],weight_type,seed,num_iterations)
+    particular_str = "{:s}-{:s}-{:d}-{:d}".format(args['dataset'], \
+            weight_type,seed,num_iterations)
 
     args['weight'] = weight_type
     args['seed'] = seed
@@ -48,12 +55,13 @@ def run_simu(weight_type, seed, num_iterations, num_method="ei"):
     transform = transforms.Compose([transforms.ToTensor()])
     trainset = torchvision.datasets.MNIST(root=args['dataroot'], train=True,
                                           download=True, transform=transform)
-    testset = torchvision.datasets.MNIST(root=args['dataroot'], train=False,
-                                         download=True, transform=transform)
+#    testset = torchvision.datasets.MNIST(root=args['dataroot'], train=False,
+#                                         download=True, transform=transform)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=args['batch_size'],
-                                              shuffle=True, num_workers=num_workers)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=args['test_batch_size'],
-                                             shuffle=True, num_workers=num_workers)
+                                              shuffle=True, num_workers=args['num_workers'])
+#    testloader = torch.utils.data.DataLoader(testset, batch_size=args['test_batch_size'],
+#                                             shuffle=True, num_workers=args['num_workers'])
+
     drift_q = UNet(
         input_channels=input_channels,
         input_height=input_height,
@@ -80,13 +88,15 @@ def run_simu(weight_type, seed, num_iterations, num_method="ei"):
 
     T = torch.nn.Parameter(torch.FloatTensor([args['T0']]), requires_grad=False)
     inf_sde = VariancePreservingSDE(beta_min=0.1, beta_max=20.0, T=T)
-    gen_sde = PluginReverseSDE(inf_sde, drift_q, T, vtype=args['vtype'], debias=args['debias'])
+    gen_sde = PluginReverseSDE(inf_sde, drift_q, T, \
+            vtype=args['vtype'], debias=args['debias'])
+
+    # load model to particular device
+    inf_sde.to(device)
+    gen_sde.to(device)
 
     total_params = sum(p.numel () for p in gen_sde.parameters ())
     print("Total number of parameters = {:d}".format(total_params))
-
-    if torch.cuda.is_available():
-        gen_sde.cuda()
 
     optim = torch.optim.Adam(gen_sde.parameters(), lr=args['lr'])
 
@@ -101,9 +111,14 @@ def run_simu(weight_type, seed, num_iterations, num_method="ei"):
     loss_vec = np.zeros(args['num_iterations'])
     torch.manual_seed(seed);
     if os.path.exists(os.path.join(folder_path, 'checkpoint.pt')) and (retrain_model==False):
-        gen_sde, optim, not_finished, count, loss_vec = torch.load(os.path.join(folder_path, 'checkpoint.pt'))
+        if device.index == None:
+            device_str = device.type
+        else:
+            device_str = device.type+":"+str(device.index)
+        gen_sde, optim, not_finished, count, loss_vec = torch.load(os.path.join(folder_path, 'checkpoint.pt'), map_location=device_str)
         if not_finished == False:
             print("The model is fully trained and we simply load the checkpoint!")
+            return gen_sde, args, logit, folder_path
     else:
         not_finished = True
         count = 0
@@ -114,8 +129,7 @@ def run_simu(weight_type, seed, num_iterations, num_method="ei"):
         gen_sde.train()
 
         for x, _ in trainloader:
-            if torch.cuda.is_available():
-                x = x.cuda()
+            x = x.to(device)
             x = x * 255 / 256 + torch.rand_like(x) / 256
             if args['real']:
                 x, _ = logit.forward_transform(x, 0)
@@ -140,43 +154,37 @@ def run_simu(weight_type, seed, num_iterations, num_method="ei"):
                 print_('Finished training')
                 break
 
-#            if count % args['sample_every'] == 0:
-#                gen_sde.eval()
-                # do something...
-#                gen_sde.train()
-
             if count % args['checkpoint_every'] == 0:
                 torch.save([gen_sde, optim, not_finished, count, loss_vec], \
                            os.path.join(folder_path, 'checkpoint.pt'))
 
+            torch.cuda.empty_cache()
+
     if not_finished == False:
         torch.save([gen_sde, optim, not_finished, count, loss_vec], os.path.join(folder_path, 'checkpoint.pt'))
 
-    plt.figure(figsize=(4,3))
-    plt.plot(np.arange(0, stop=args['num_iterations']), loss_vec)
-    plt.title("Loss")
-    plt.yscale("log")
-    plt.savefig(folder_path + "/loss_{:s}.eps".format(particular_str))
-    plt.savefig(folder_path + "/loss_{:s}.pdf".format(particular_str))
+    if to_plot:
+        plt.figure(figsize=(4,3))
+        plt.plot(np.arange(0, stop=args['num_iterations']), loss_vec)
+        plt.title("Loss")
+        plt.yscale("log")
+        plt.savefig(folder_path + "/loss_{:s}.eps".format(particular_str))
+        plt.savefig(folder_path + "/loss_{:s}.pdf".format(particular_str))
 
-    # turn off the training mode
-    gen_sde.eval()
+        # turn off the training mode
+        gen_sde.eval()
 
-    ###############################################################################
-    # plot 10 * 10 figures
-    print("start to generate samples")
-    torch.manual_seed(seed);
-    create(folder_path, "assets")
-    num_steps = 100
-    for c in tqdm(np.sqrt(np.array([0.0, 0.5, 1.0, 1.5, 2.0, 2.5]))):
-        torch.manual_seed(seed)
-        fig, gen_img, gen_img_data = plot_grids(gen_sde, c, logit, args, num_method=num_method, \
-                                                num_steps=num_steps, n=10, s=8, binary=True)
-        plt.savefig(folder_path + ("/assets/img_{:s}_{:.2f}".format(particular_str,c)).replace('.','-') + ".eps")
-        plt.savefig(folder_path + ("/assets/img_{:s}_{:.2f}".format(particular_str,c)).replace('.','-') + ".pdf")
-        torch.save((gen_img, gen_img_data), folder_path + "/assets/{:s}_img_data_{:.2f}.pt".format(args['dataset'],c))
+        # plot 10 * 10 figures
+        print("start to generate samples")
+        torch.manual_seed(seed);
+        create(folder_path, "assets")
+        num_steps = 200
+        for c in tqdm(np.sqrt(np.array([0.0, 0.5, 1.0, 1.5, 2.0, 2.5]))):
+            torch.manual_seed(seed)
+            fig, gen_img, gen_img_data = plot_grids(gen_sde, c, logit, args, num_method=num_method, \
+                                                    num_steps=num_steps, n=10, s=8, binary=True)
+            plt.savefig(folder_path + ("/assets/img_{:s}_{:.2f}".format(particular_str,c)).replace('.','-') + ".eps")
+            plt.savefig(folder_path + ("/assets/img_{:s}_{:.2f}".format(particular_str,c)).replace('.','-') + ".pdf")
+            torch.save((gen_img, gen_img_data), folder_path + "/assets/{:s}_img_data_{:.2f}.pt".format(args['dataset'],c))
 
-for weight_type in ["default","data","noise"]:
-    for seed in [1, 2]:
-        for iter_num in [20000]:
-            run_simu(weight_type, seed, iter_num, num_method="ei")
+    return gen_sde, args, logit, folder_path

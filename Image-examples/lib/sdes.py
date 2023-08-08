@@ -108,6 +108,31 @@ class PluginReverseSDE(torch.nn.Module):
 
         return (w(std) * (a * std / g + target) ** 2).view(x.size(0), -1).sum(1, keepdim=False) / 2
 
+    def dsm_at_fixed_time(self, x, t):
+        """
+            denoising score matching loss at fixed time t.
+            t must be a scalar
+        """
+        t_ = t * torch.ones([x.size(0), ] + [1 for _ in range(x.ndim - 1)]).to(x)
+        y, target, std, g = self.base_sde.sample(t_, x, return_noise=True)
+        a = self.a(y, t_.squeeze())
+        return ((a * std / g + target) ** 2).view(x.size(0), -1).sum(1, keepdim=False) / 2
+
+    def dsm_at_time_t(self, t, logit, testloader, seed=-1):
+        if seed >= 0:
+            torch.manual_seed(seed)
+        device = [p.device for p in self.parameters()][0]
+
+        loss = 0.0
+        count = 0
+        for x, _ in testloader:
+            x = x.to(device)
+            x = x * 255 / 256 + torch.rand_like(x) / 256
+            x, _ = logit.forward_transform(x, 0)
+            count = count + x.size(0)
+            loss = loss + torch.sum(self.dsm_at_fixed_time(x, t)).item()
+            torch.cuda.empty_cache()
+        return loss/count
 
     def ei(self, y0, t, dt, alpha):
         """

@@ -5,3 +5,7 @@ numpy
 scipy
 matplotlib
 jupyter
+tensorboardX
+tqdm
+pyyaml
+pandas

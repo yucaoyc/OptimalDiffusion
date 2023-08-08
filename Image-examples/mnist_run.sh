@@ -1,3 +1,5 @@
-python3 mnist_train.py
+python3 mnist_train_model.py
 python3 mnist_visualize.py
-git add ../assets/*.eps
+python3 mnist_visualize_err.py
+git add ../assets/*mnist*.eps
+git add ../assets/*MNIST*.eps

@@ -45,7 +45,7 @@ def generate_batch_sample(sde, alpha, logit, args, \
     return y0
 
 def save_batch_sample(y0, to_save_path, img_transform, \
-        new_size = 64, start_idx=0, verbose=False, save_img=False):
+        new_size = 64, start_idx=0, verbose=False, save_img=False, max_img_size=20):
 
     img_to_tensor = transforms.ToTensor()
     y0_new = torch.zeros(y0.size(0), y0.size(1), new_size, new_size).to(y0)
@@ -54,7 +54,7 @@ def save_batch_sample(y0, to_save_path, img_transform, \
 
     for i in range(y0.size(0)):
         img = img_transform(y0[i,:,:,:])
-        if save_img:
+        if save_img and (i < max_img_size):
             img.save(to_save_path+"/"+str(start_idx+i)+".png")
         y0_new[i,:,:,:] = img_to_tensor(img)
 
