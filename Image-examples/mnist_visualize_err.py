@@ -92,7 +92,7 @@ plt.plot(t_vec/args['T0'], l_vec2[2,:]/l_vec2[0,:], 'b-.', label=weight_type_lis
 plt.plot(t_vec/args['T0'], np.ones(np.size(t_vec)), label="reference")
 plt.xlabel("t/T", fontsize=16)
 plt.legend(fontsize=14)
-plt.title("Relative score loss", fontsize=16)
+plt.title("Relative score-matching loss", fontsize=16)
 plt.tight_layout()
 f3.savefig("../assets/rela_loss_{:s}.eps".format(args['dataset']))
 
