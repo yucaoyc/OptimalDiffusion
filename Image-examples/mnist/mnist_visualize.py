@@ -5,6 +5,7 @@ import torchvision
 import torchvision.transforms as transforms
 import sys
 sys.path.append('./')
+sys.path.append('../')
 from lib.sdes import VariancePreservingSDE, PluginReverseSDE
 from lib.plotting import get_grid, plot_grids
 from lib.flows.elemwise import LogitTransform
@@ -71,7 +72,7 @@ for seed_idx in [0, 1]:
         plt.title('weight type = ' + weight_type_list[i], fontsize=14)
         plt.xticks([]); plt.yticks([])
     plt.tight_layout()
-    plt.savefig("../assets/MNIST_ODE_with_different_training" \
+    plt.savefig("../../assets/MNIST_ODE_with_different_training" \
                 + "{:d}-{:d}".format(seed_list[seed_idx], num_steps_list[num_step_idx]) \
                 + ".eps")
 
@@ -94,6 +95,6 @@ for weight_type_idx in [0, 1, 2]: #'default'
         plt.suptitle("weight type={:s}, trial={:d}".format(weight_type_list[weight_type_idx], \
                                                           seed_list[seed_idx]), fontsize=16)
         plt.tight_layout()
-        plt.savefig("../assets/MNIST_effect_of_c_" + \
+        plt.savefig("../../assets/MNIST_effect_of_c_" + \
                     "{:s}_{:d}".format(weight_type_list[weight_type_idx], \
                     seed_list[seed_idx]) + ".eps")

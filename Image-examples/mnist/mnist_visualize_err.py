@@ -5,7 +5,9 @@ import torchvision
 import torchvision.transforms as transforms
 import sys
 sys.path.append('./')
+sys.path.append('../')
 from lib.plotting import get_grid, plot_grids
+from lib.helpers import create
 import matplotlib.pyplot as plt
 import yaml
 from datetime import datetime
@@ -55,7 +57,7 @@ plt.title("Loss in normal scale", fontsize=16)
 plt.xlabel("t/T", fontsize=16)
 plt.legend(fontsize=14)
 plt.tight_layout()
-f1.savefig("../assets/loss_{:s}_seed_{:d}.eps".format(args['dataset'], seed))
+f1.savefig("../../assets/loss_{:s}_seed_{:d}.eps".format(args['dataset'], seed))
 
 # case 2
 l_vec2 = np.zeros((3, Nt))
@@ -81,7 +83,7 @@ plt.title("Loss in normal scale", fontsize=16)
 plt.xlabel("t/T", fontsize=16)
 plt.legend(fontsize=14)
 plt.tight_layout()
-f2.savefig("../assets/loss_{:s}_seed_{:d}.eps".format(args['dataset'], seed))
+f2.savefig("../../assets/loss_{:s}_seed_{:d}.eps".format(args['dataset'], seed))
 
 # Relative error
 f3=plt.figure(figsize=(5,4))
@@ -94,11 +96,11 @@ plt.xlabel("t/T", fontsize=16)
 plt.legend(fontsize=14)
 plt.title("Relative score-matching loss", fontsize=16)
 plt.tight_layout()
-f3.savefig("../assets/rela_loss_{:s}.eps".format(args['dataset']))
+f3.savefig("../../assets/rela_loss_{:s}.eps".format(args['dataset']))
 
 print(np.sum(l_vec, axis=1)/Nt)
 print(np.sum(l_vec2, axis=1)/Nt)
 
-with open("data/{:s}_l_vec.npy".format(args['dataset']), 'wb') as f:
+with open("{:s}_l_vec.npy".format(args['dataset']), 'wb') as f:
     np.save(f, l_vec)
     np.save(f, l_vec2)

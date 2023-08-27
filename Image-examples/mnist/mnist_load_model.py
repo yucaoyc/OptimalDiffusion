@@ -5,6 +5,7 @@ import torchvision
 import torchvision.transforms as transforms
 import sys
 sys.path.append('./')
+sys.path.append('../')
 from lib.sdes import VariancePreservingSDE, PluginReverseSDE
 from lib.plotting import get_grid, plot_grids
 from lib.flows.elemwise import LogitTransform

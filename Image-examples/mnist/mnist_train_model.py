@@ -1,5 +1,6 @@
 import sys
 sys.path.append('./')
+sys.path.append('../')
 from mnist_load_model import *
 import torch
 
