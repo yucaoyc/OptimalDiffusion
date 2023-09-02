@@ -1,3 +1,4 @@
+import os
 import torch
 import time
 import numpy as np
@@ -55,7 +56,7 @@ def save_batch_sample(y0, to_save_path, img_transform, \
     for i in range(y0.size(0)):
         img = img_transform(y0[i,:,:,:])
         if save_img and (i < max_img_size):
-            img.save(to_save_path+"/"+str(start_idx+i)+".png")
+            img.save(os.path.join(to_save_path, str(start_idx+i)+".png"))
         y0_new[i,:,:,:] = img_to_tensor(img)
 
     if verbose:

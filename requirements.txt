@@ -9,3 +9,6 @@ tensorboardX
 tqdm
 pyyaml
 pandas
+lightning
+click
+termcolor

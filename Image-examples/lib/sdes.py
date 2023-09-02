@@ -95,6 +95,10 @@ class PluginReverseSDE(torch.nn.Module):
         return (1. - lmbd) ** 0.5 * self.h(self.T-t, y, self.T)
 
     @torch.enable_grad()
+    def forward(self, x, w=lambda z : torch.ones_like(z)):
+        return self.dsm(x, w)
+
+    @torch.enable_grad()
     def dsm(self, x, w=lambda z : torch.ones_like(z)):
         """
         denoising score matching loss

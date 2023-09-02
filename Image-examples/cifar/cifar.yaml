@@ -1,0 +1,28 @@
+dataset : 'cifar'
+dataroot : 'datasets'
+saveroot : 'saved'
+expname : 'default'
+print_every : 500
+checkpoint_every : 20000
+num_steps : 1000 # number of integration steps for sampling
+
+# optimization
+vtype : 'rademacher'
+batch_size : 64
+test_batch_size : 256
+lr : 0.0001
+num_iterations : 200000
+num_workers: 8
+
+# # model
+real : True # transforming the data from [0,1] to the real space using the logit function
+debias : False # using non-uniform sampling to debias the denoising score matching loss
+T0 : 1.0 # integration time
+
+reduce_percent : 0.5 # reduce the size of test dataset
+logit_alpha : 0.05 # alpha value in logit transform. Huang, et al. uses 0.05
+
+label_list : ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
+
+input_channels : 3
+input_height : 32
